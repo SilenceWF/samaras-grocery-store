@@ -1,135 +1,115 @@
-
-import { useParams } from 'react-router-dom'
-
-const productDetails = {
-  1: {
-    name: 'Greek Yogurt',
-    brand: 'Local Farms',
-    price: '€3.29',
-    originalPrice: '€4.29',
-    image: 'https://images.unsplash.com/photo-1567306301408-9b74779a11af?w=400&h=400&fit=crop',
-    description: 'Creamy Greek yogurt made from fresh milk. High in protein and perfect for breakfast or snacks.',
-    details: [
-      '500g package',
-      'High protein content',
-      'No artificial preservatives',
-      'Made from local milk'
-    ],
-    nutrition: {
-      calories: '120',
-      protein: '10g',
-      fat: '3.5g',
-      carbs: '5g'
-    }
-  },
-  2: {
-    name: 'Arabica Coffee',
-    brand: 'Premium Blend',
-    price: '€12.99',
-    originalPrice: '€15.99',
-    image: 'https://images.unsplash.com/photo-1587734195503-904fca47e0e9?w=400&h=400&fit=crop',
-    description: 'Premium Arabica coffee beans, roasted to perfection for a rich and smooth flavor profile.',
-    details: [
-      '250g package',
-      '100% Arabica beans',
-      'Medium roast',
-      'Freshly roasted'
-    ],
-    nutrition: {
-      calories: '5',
-      protein: '0g',
-      fat: '0g',
-      carbs: '1g'
-    }
-  }
-}
+import { useMemo, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { getProductById, getProductsByCategory } from '../data/catalog'
+import { useAppStore } from '../store/AppStore'
+import GlassPanel from '../components/ui/GlassPanel'
+import GlowButton from '../components/ui/GlowButton'
+import ProductCard from '../components/ui/ProductCard'
+import { formatPrice } from '../utils/format'
 
 export default function Product() {
   const { productId } = useParams()
-  const product = productDetails[productId]
+  const { language, copy, addToCart } = useAppStore()
+  const [quantity, setQuantity] = useState(1)
+
+  const product = getProductById(productId)
+
+  const relatedProducts = useMemo(() => {
+    if (!product) {
+      return []
+    }
+
+    return getProductsByCategory(product.category)
+      .filter((entry) => entry.id !== product.id)
+      .slice(0, 3)
+  }, [product])
 
   if (!product) {
     return (
-      <div className="p-8 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Product not found</h1>
-      </div>
+      <section className="px-4 pb-24 sm:px-6 lg:px-8">
+        <GlassPanel className="p-8 text-center">
+          <h1 className="display-title text-3xl text-white">Product not found</h1>
+          <p className="mt-2 text-sm text-slate-300">The product you requested is no longer available.</p>
+          <Link to="/" className="mt-5 inline-flex text-sm font-semibold text-emerald-300 hover:text-emerald-200">
+            {copy.continueShopping}
+          </Link>
+        </GlassPanel>
+      </section>
     )
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="grid gap-8 lg:grid-cols-2">
-        {/* Product Image */}
-        <div className="flex justify-center">
-          <img 
-            src={product.image} 
-            alt={product.name}
-            className="w-full max-w-md rounded-2xl object-cover"
+    <section className="space-y-7 px-4 pb-24 sm:px-6 lg:px-8">
+      <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
+        <GlassPanel className="overflow-hidden p-3 sm:p-4">
+          <img
+            src={product.image}
+            alt={product.name[language]}
+            className="h-full max-h-[520px] w-full rounded-3xl object-cover"
           />
-        </div>
+        </GlassPanel>
 
-        {/* Product Details */}
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{product.name}</h1>
-            <p className="text-gray-600 dark:text-gray-300 mt-1">{product.brand}</p>
-          </div>
+        <GlassPanel className="flex flex-col p-5 sm:p-6">
+          <p className="text-xs uppercase tracking-[0.2em] text-emerald-300">{product.category}</p>
+          <h1 className="display-title mt-2 text-4xl text-white">{product.name[language]}</h1>
+          <p className="mt-3 text-sm text-slate-200">{product.description[language]}</p>
 
-          <div className="flex items-center gap-4">
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">{product.price}</span>
-            {product.originalPrice && (
-              <span className="text-lg text-gray-500 line-through dark:text-gray-400">
-                {product.originalPrice}
-              </span>
-            )}
-          </div>
+          <p className="mt-5 text-3xl font-semibold text-emerald-300">
+            {formatPrice(product.price, copy.locale, copy.currency)}
+          </p>
 
-          <p className="text-gray-600 dark:text-gray-300">{product.description}</p>
-
-          <div className="space-y-3">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Product Details</h3>
-            <ul className="space-y-2">
-              {product.details.map((detail, index) => (
-                <li key={index} className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                  <i className="bx bx-check text-green-600" />
-                  {detail}
-                </li>
-              ))}
+          <div className="mt-4 rounded-3xl border border-white/12 bg-white/6 p-4">
+            <p className="text-xs uppercase tracking-[0.16em] text-slate-300">{copy.productDetails}</p>
+            <ul className="mt-3 space-y-2 text-sm text-slate-200">
+              <li>Size: {product.quantity}</li>
+              <li>In stock: {product.inStock ? 'Yes' : 'No'}</li>
+              <li>Tags: {product.tags.join(', ')}</li>
             </ul>
           </div>
 
-          <div className="space-y-3">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Nutrition (per serving)</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex justify-between">
-                <span>Calories</span>
-                <span className="font-semibold">{product.nutrition.calories}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Protein</span>
-                <span className="font-semibold">{product.nutrition.protein}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Fat</span>
-                <span className="font-semibold">{product.nutrition.fat}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Carbs</span>
-                <span className="font-semibold">{product.nutrition.carbs}</span>
-              </div>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <div className="flex items-center rounded-full border border-white/12 bg-white/5 p-1">
+              <button
+                type="button"
+                className="glass-icon-button h-10 w-10"
+                onClick={() => setQuantity((previousQuantity) => Math.max(1, previousQuantity - 1))}
+                aria-label="Decrease quantity"
+                disabled={!product.inStock}
+              >
+                <i className="bx bx-minus" aria-hidden="true" />
+              </button>
+              <span className="w-9 text-center text-sm font-semibold text-white">{quantity}</span>
+              <button
+                type="button"
+                className="glass-icon-button h-10 w-10"
+                onClick={() => setQuantity((previousQuantity) => previousQuantity + 1)}
+                aria-label="Increase quantity"
+                disabled={!product.inStock}
+              >
+                <i className="bx bx-plus" aria-hidden="true" />
+              </button>
             </div>
-          </div>
 
-          <div className="flex items-center gap-4">
-            <button className="flex-1 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-all">
-              Add to Cart
-            </button>
-            <button className="flex items-center justify-center w-12 h-12 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300">
-              <i className="bx bx-heart text-xl" />
-            </button>
+            <GlowButton
+              icon="bx bx-cart-add"
+              onClick={() => addToCart(product.id, quantity)}
+              disabled={!product.inStock}
+              className={product.inStock ? '' : 'cursor-not-allowed opacity-50'}
+            >
+              {product.inStock ? copy.addToCart : language === 'el' ? 'Εκτός αποθέματος' : 'Out of stock'}
+            </GlowButton>
           </div>
+        </GlassPanel>
+      </div>
+
+      <div>
+        <h2 className="display-title mb-4 text-2xl text-white">{copy.relatedProducts}</h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {relatedProducts.map((relatedProduct) => (
+            <ProductCard key={relatedProduct.id} product={relatedProduct} />
+          ))}
         </div>
       </div>
-    </div>
+    </section>
   )
 }

@@ -1,60 +1,110 @@
-import { useParams, Link } from 'react-router-dom'
+import { useMemo, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { categories, getProductsByCategory } from '../data/catalog'
+import { useAppStore } from '../store/AppStore'
+import SectionHeading from '../components/ui/SectionHeading'
+import ProductCard from '../components/ui/ProductCard'
+import QuickViewModal from '../components/home/QuickViewModal'
+import GlassPanel from '../components/ui/GlassPanel'
 
-const categoryProducts = {
-  breakfast: [
-    { id: 1, name: 'Greek Yogurt', price: '€3.29', image: 'https://images.unsplash.com/photo-1567306301408-9b74779a11af?w=300&h=300&fit=crop' },
-    { id: 2, name: 'Organic Cereal', price: '€7.49', image: 'https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?w=300&h=300&fit=crop' },
-    { id: 3, name: 'Fresh Eggs', price: '€6.92', image: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=300&h=300&fit=crop' },
-    { id: 4, name: 'Whole Wheat Bread', price: '€2.49', image: 'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=300&h=300&fit=crop' }
-  ],
-  coffee: [
-    { id: 5, name: 'Arabica Coffee', price: '€12.99', image: 'https://images.unsplash.com/photo-1587734195503-904fca47e0e9?w=300&h=300&fit=crop' },
-    { id: 6, name: 'Espresso Blend', price: '€14.50', image: 'https://images.unsplash.com/photo-1587734195503-904fca47e0e9?w=300&h=300&fit=crop' },
-    { id: 7, name: 'French Roast', price: '€11.99', image: 'https://images.unsplash.com/photo-1587734195503-904fca47e0e9?w=300&h=300&fit=crop' }
-  ]
-}
+const sortOptions = [
+  { id: 'featured', label: { en: 'Featured', el: 'Προτεινόμενα' } },
+  { id: 'price-low', label: { en: 'Price: Low to high', el: 'Τιμή: Χαμηλή προς υψηλή' } },
+  { id: 'price-high', label: { en: 'Price: High to low', el: 'Τιμή: Υψηλή προς χαμηλή' } },
+  { id: 'name', label: { en: 'Name', el: 'Όνομα' } },
+]
 
 export default function Category() {
   const { categoryId } = useParams()
-  const products = categoryProducts[categoryId] || []
+  const { language, copy } = useAppStore()
+  const [sortBy, setSortBy] = useState('featured')
+  const [quickViewProduct, setQuickViewProduct] = useState(null)
+
+  const category = categories.find((entry) => entry.id === categoryId)
+
+  const sortedProducts = useMemo(() => {
+    const baseProducts = getProductsByCategory(categoryId)
+
+    switch (sortBy) {
+      case 'price-low':
+        return [...baseProducts].sort((a, b) => a.price - b.price)
+      case 'price-high':
+        return [...baseProducts].sort((a, b) => b.price - a.price)
+      case 'name':
+        return [...baseProducts].sort((a, b) => a.name[language].localeCompare(b.name[language]))
+      default:
+        return [...baseProducts].sort((a, b) => Number(b.featured) - Number(a.featured))
+    }
+  }, [categoryId, language, sortBy])
+
+  if (!category) {
+    return (
+      <section className="px-4 pb-24 sm:px-6 lg:px-8">
+        <GlassPanel className="p-8 text-center">
+          <h1 className="display-title text-3xl text-white">Category not found</h1>
+          <p className="mt-2 text-sm text-slate-300">This category does not exist in our catalog.</p>
+          <Link to="/" className="mt-5 inline-flex text-sm font-semibold text-emerald-300 hover:text-emerald-200">
+            {copy.continueShopping}
+          </Link>
+        </GlassPanel>
+      </section>
+    )
+  }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white capitalize">
-          {categoryId}
-        </h1>
-        <p className="text-gray-600 dark:text-gray-300 mt-1">
-          Discover our selection of {categoryId} products
-        </p>
-      </div>
+    <section className="px-4 pb-24 sm:px-6 lg:px-8">
+      <SectionHeading
+        title={`${category.label[language]} ${copy.categoryTitleSuffix}`}
+        subtitle={`${sortedProducts.length} products available`}
+      />
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {products.map((product) => (
+      <div className="mb-6 flex flex-wrap justify-center gap-2">
+        {categories.map((entry) => (
           <Link
-            key={product.id}
-            to={`/product/${product.id}`}
-            className="bg-white rounded-2xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700 overflow-hidden transition-all hover:shadow-lg"
+            key={entry.id}
+            to={`/category/${entry.id}`}
+            className={`rounded-full px-3 py-2 text-sm font-semibold transition ${
+              entry.id === categoryId
+                ? 'bg-emerald-500 text-white'
+                : 'border border-white/12 bg-white/5 text-slate-200 hover:bg-white/10'
+            }`}
           >
-            <img 
-              src={product.image} 
-              alt={product.name}
-              className="w-full h-32 object-cover"
-            />
-            <div className="p-3">
-              <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-1">
-                {product.name}
-              </h3>
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-gray-900 dark:text-white">{product.price}</span>
-                <button className="flex items-center justify-center w-8 h-8 rounded-full bg-green-600 text-white transition-all hover:bg-green-700">
-                  <i className="bx bx-plus text-lg" />
-                </button>
-              </div>
-            </div>
+            {entry.label[language]}
           </Link>
         ))}
       </div>
-    </div>
+
+      <GlassPanel className="mb-6 flex flex-wrap items-center justify-center gap-3 p-4">
+        <span className="text-xs uppercase tracking-[0.18em] text-slate-300">Sort</span>
+        <div className="flex flex-wrap justify-center gap-2">
+          {sortOptions.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => setSortBy(option.id)}
+              className={`rounded-full px-3 py-2 text-sm transition ${
+                sortBy === option.id
+                  ? 'bg-emerald-500 text-white'
+                  : 'border border-white/10 bg-white/8 text-slate-200 hover:bg-white/15'
+              }`}
+            >
+              {option.label[language]}
+            </button>
+          ))}
+        </div>
+      </GlassPanel>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {sortedProducts.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            onQuickView={(selectedProduct) => setQuickViewProduct(selectedProduct)}
+          />
+        ))}
+      </div>
+
+      <QuickViewModal product={quickViewProduct} onClose={() => setQuickViewProduct(null)} />
+    </section>
   )
 }
