@@ -28,9 +28,12 @@ export default function Home() {
   const [isTabLoading, setIsTabLoading] = useState(false)
   const [quickViewProduct, setQuickViewProduct] = useState(null)
   const [email, setEmail] = useState('')
+  const [newsletterTrap, setNewsletterTrap] = useState('')
   const [newsletterStatus, setNewsletterStatus] = useState('idle')
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null)
   const [installHint, setInstallHint] = useState('')
+  const newsletterStartedAtRef = useRef(Date.now())
+  const newsletterLastAttemptRef = useRef(0)
   const tabSwitchTimeoutRef = useRef(null)
   const installHintTimeoutRef = useRef(null)
 
@@ -73,16 +76,64 @@ export default function Home() {
     }
   }, [language])
 
-  const onNewsletterSubmit = (event) => {
+  const onNewsletterSubmit = async (event) => {
     event.preventDefault()
-
-    if (!email.includes('@')) {
-      setNewsletterStatus('error')
+    if (newsletterStatus === 'submitting') {
       return
     }
 
-    setNewsletterStatus('success')
-    setEmail('')
+    const sanitizedEmail = email.trim().toLowerCase()
+    const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(sanitizedEmail)
+    if (!isEmailValid) {
+      setNewsletterStatus('invalid')
+      return
+    }
+
+    const now = Date.now()
+    const isFastSubmit = now - newsletterStartedAtRef.current < 3000
+    const isCooldownActive = now - newsletterLastAttemptRef.current < 30000
+    if (newsletterTrap.trim() || isFastSubmit || isCooldownActive) {
+      setNewsletterStatus('blocked')
+      return
+    }
+
+    newsletterLastAttemptRef.current = now
+    setNewsletterStatus('submitting')
+
+    try {
+      const response = await fetch('https://formsubmit.co/ajax/maria@fresh-fruits-samaras.com', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          email: sanitizedEmail,
+          source: 'Homepage newsletter section',
+          page: window.location.href,
+          language,
+          submitted_at: new Date().toISOString(),
+          user_agent: window.navigator.userAgent,
+          referrer: window.document.referrer || 'direct',
+          _subject: `Newsletter signup from ${sanitizedEmail}`,
+          _template: 'table',
+          _captcha: 'false',
+          _honey: newsletterTrap,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Newsletter request failed')
+      }
+
+      setNewsletterStatus('success')
+      setEmail('')
+      setNewsletterTrap('')
+      newsletterStartedAtRef.current = Date.now()
+      return
+    } catch {
+      setNewsletterStatus('error')
+    }
   }
 
   const onTabChange = (nextTab) => {
@@ -619,21 +670,44 @@ export default function Home() {
             <input
               type="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) => {
+                setEmail(event.target.value)
+                setNewsletterStatus('idle')
+              }}
               placeholder="you@email.com"
               className="h-12 flex-1 rounded-full border border-white/14 bg-white/6 px-4 text-sm text-white placeholder:text-slate-300/70 focus:border-emerald-300 focus:outline-none"
               required
             />
-            <GlowButton type="submit" className="h-12 px-7" icon="bx bx-paper-plane">
-              {copy.newsletterButton}
+            <input
+              type="text"
+              name="_honey"
+              tabIndex="-1"
+              autoComplete="off"
+              value={newsletterTrap}
+              onChange={(event) => setNewsletterTrap(event.target.value)}
+              aria-hidden="true"
+              className="hidden"
+            />
+            <GlowButton type="submit" className="h-12 px-7" icon="bx bx-paper-plane" disabled={newsletterStatus === 'submitting'}>
+              {newsletterStatus === 'submitting'
+                ? language === 'el'
+                  ? 'Αποστολή...'
+                  : 'Sending...'
+                : copy.newsletterButton}
             </GlowButton>
           </form>
 
           {newsletterStatus === 'success' ? (
             <p className="mt-3 text-sm text-emerald-300">Thanks, your email has been added.</p>
           ) : null}
-          {newsletterStatus === 'error' ? (
+          {newsletterStatus === 'invalid' ? (
             <p className="mt-3 text-sm text-rose-300">Please enter a valid email address.</p>
+          ) : null}
+          {newsletterStatus === 'error' ? (
+            <p className="mt-3 text-sm text-rose-300">We could not process your request. Please try again shortly.</p>
+          ) : null}
+          {newsletterStatus === 'blocked' ? (
+            <p className="mt-3 text-sm text-amber-300">Submission blocked to prevent spam. Please wait and try again.</p>
           ) : null}
         </GlassPanel>
       </section>
