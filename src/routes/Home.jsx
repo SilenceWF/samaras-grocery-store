@@ -82,7 +82,7 @@ export default function Home() {
           <GlassPanel className="hero-overlay overflow-hidden p-5 sm:p-8 lg:p-10">
             <div className="grid gap-8 lg:grid-cols-[1fr_1fr]">
               <div>
-                <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[11px] uppercase tracking-[0.1em] text-emerald-300">
+                <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.05em] text-emerald-200">
                   <i className="bx bxs-map text-sm" aria-hidden="true" />
                   {STORE_LOCATION.address}
                 </p>
@@ -91,7 +91,7 @@ export default function Home() {
                 </h1>
                 <p className="mt-3 max-w-xl text-pretty text-base text-slate-200 sm:text-lg">{copy.heroSubtitle}</p>
 
-                <div className="mt-6 flex flex-wrap gap-3">
+                {/* <div className="mt-6 flex flex-wrap gap-3">
                   <Link to="/category/fruits">
                     <GlowButton icon="bx bx-right-arrow-alt">{copy.heroCta}</GlowButton>
                   </Link>
@@ -100,7 +100,7 @@ export default function Home() {
                       {copy.heroSecondaryCta}
                     </GlowButton>
                   </a>
-                </div>
+                </div> */}
               </div>
 
               <div className="relative min-h-[310px] overflow-hidden rounded-[1.55rem] border border-white/12">
@@ -206,12 +206,12 @@ export default function Home() {
           }
         />
 
-        <div className="scrollbar-thin -mx-1 flex snap-x gap-2.5 overflow-x-auto px-1 pb-2 md:mx-0 md:flex-wrap md:justify-center md:overflow-visible">
+        <div className="scrollbar-thin -mx-1 flex snap-x gap-2.5 overflow-y-visible overflow-x-auto px-1 pb-2 md:mx-0 md:flex-wrap md:justify-center md:overflow-visiable">
           {categories.map((category) => (
             <Link
               key={category.id}
               to={`/category/${category.id}`}
-              className="glass-panel group flex h-[110px] w-[110px] shrink-0 snap-start flex-col items-center justify-center rounded-[1.95rem] p-1 text-center transition hover:-translate-y-1"
+              className="glass-panel no-shadow group flex h-[110px] w-[110px] shrink-0 snap-start flex-col items-center justify-center rounded-[1.95rem] p-1 text-center transition hover:-translate-y-1"
             >
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl text-3xl transition">
                 <span role="img" aria-hidden="true">
@@ -356,7 +356,7 @@ export default function Home() {
         </GlassPanel>
       </section>
 
-      <section className="px-4 sm:px-6 lg:px-8">
+      {/* <section className="px-4 sm:px-6 lg:px-8">
         <SectionHeading title={copy.sectionRecipes} />
         <div className="grid gap-3 md:grid-cols-3">
           {recipes.map((recipe) => (
@@ -405,7 +405,7 @@ export default function Home() {
             </div>
           </div>
         </GlassPanel>
-      </section>
+      </section> */}
 
       <section className="px-4 sm:px-6 lg:px-8">
         <SectionHeading title={copy.sectionNewsletter} />
@@ -413,7 +413,7 @@ export default function Home() {
           <h3 className="display-title text-3xl text-white">{copy.newsletterTitle}</h3>
           <p className="mt-2 max-w-xl text-sm text-slate-300">{copy.newsletterSubtitle}</p>
 
-          <form className="mt-5 flex flex-col gap-3 sm:flex-row" onSubmit={onNewsletterSubmit} noValidate>
+          <form className="mt-5 flex gap-3 sm:flex-row" onSubmit={onNewsletterSubmit} noValidate>
             <input
               type="email"
               value={email}

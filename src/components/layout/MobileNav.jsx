@@ -27,7 +27,7 @@ export default function MobileNav() {
           </li>
         ))}
 
-        <li>
+        {/* <li>
           <button
             type="button"
             onClick={openCart}
@@ -41,7 +41,7 @@ export default function MobileNav() {
               </span>
             ) : null}
           </button>
-        </li>
+        </li> */}
 
         {navigation.slice(2).map((entry) => (
           <li key={entry.id}>

@@ -39,7 +39,7 @@ export default function ProductCard({ product, onQuickView }) {
         <p className="text-xs text-slate-300">{product.quantity}</p>
       </div>
 
-      <div className="mt-auto flex items-center justify-between pt-4">
+      {/* <div className="mt-auto flex items-center justify-between pt-4">
         <strong className="text-lg text-white">{formatPrice(product.price, copy.locale, copy.currency)}</strong>
         <button
           type="button"
@@ -50,7 +50,7 @@ export default function ProductCard({ product, onQuickView }) {
         >
           <i className="bx bx-plus text-2xl" aria-hidden="true" />
         </button>
-      </div>
+      </div> */}
     </GlassPanel>
   )
 }

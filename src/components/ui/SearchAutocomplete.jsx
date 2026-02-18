@@ -14,7 +14,7 @@ export default function SearchAutocomplete({ compact = false, className = '' }) 
         {copy.searchPlaceholder}
       </label>
 
-      <div className={`glass-button relative ${compact ? 'h-12' : 'h-14'} flex items-center rounded-full px-2`}>
+      <div className={`glass-button relative ${compact ? 'h-10' : 'h-14'} flex items-center rounded-full px-2`}>
         <i className="bx bx-search pointer-events-none text-xl text-emerald-300" aria-hidden="true" />
         <input
           id={compact ? 'compact-search' : 'hero-search'}

@@ -1280,7 +1280,7 @@ export const navigation = [
     to: '/category/fruits',
     label: { en: 'Categories', el: 'Κατηγορίες' },
   },
-  { id: 'recipes', icon: 'bx-book-bookmark', to: '/stories', label: { en: 'Recipes', el: 'Συνταγές' } },
+  // { id: 'recipes', icon: 'bx-book-bookmark', to: '/stories', label: { en: 'Recipes', el: 'Συνταγές' } },
   { id: 'profile', icon: 'bx-user-circle', to: '/contact', label: { en: 'Profile', el: 'Προφίλ' } },
 ]
 

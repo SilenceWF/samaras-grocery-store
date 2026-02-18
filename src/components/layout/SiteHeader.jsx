@@ -9,24 +9,18 @@ export default function SiteHeader() {
 
   return (
     <header className="sticky top-3 z-30 mb-6">
-      <div className="glass-panel grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-[1.6rem] p-3 sm:grid-cols-[138px_minmax(0,1fr)_138px] sm:gap-3 sm:p-4">
+      <div className="glass-panel grid grid-cols-[100px_minmax(0,1fr)_100px] items-center gap-2 rounded-[2.6rem] p-3 sm:grid-cols-[138px_minmax(0,1fr)_138px] sm:gap-3 sm:p-4">
         <button
           type="button"
-          onClick={() => navigate('/contact')}
-          className="glass-button hidden h-10 w-[138px] items-center gap-2 rounded-full px-2.5 text-left sm:flex"
+          onClick={() => navigate('/')}
+          className="h-10 md:w-[138px] items-center gap-2 rounded-full px-2.5 text-left sm:flex"
         >
-          <span className="glass-icon-button h-7 w-7 shrink-0">
-            <i className="bx bxs-map text-base" aria-hidden="true" />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-[10px] uppercase tracking-[0.16em] text-emerald-300">Location</span>
-            <span className="line-clamp-1 text-xs text-white">{STORE_LOCATION.address}</span>
-          </span>
+          <img src="/images/vite.webp" alt="" className="w-auto h-full contrast-50 saturate-100" />
         </button>
 
         <SearchAutocomplete compact className="justify-self-center w-full max-w-[420px] sm:max-w-[440px]" />
 
-        <div className="ml-auto flex w-[138px] items-center justify-end gap-2">
+        <div className="ml-auto flex md:w-[138px] items-center justify-end gap-2">
           <button
             type="button"
             onClick={toggleLanguage}
@@ -36,7 +30,7 @@ export default function SiteHeader() {
             {language === 'en' ? 'EL' : 'EN'}
           </button>
 
-          <button
+          {/* <button
             type="button"
             onClick={openCart}
             className="glass-icon-button relative h-10 w-10"
@@ -52,7 +46,7 @@ export default function SiteHeader() {
 
           <Link to="/contact" className="glass-icon-button h-10 w-10" aria-label="Open profile">
             <i className="bx bx-user text-xl" aria-hidden="true" />
-          </Link>
+          </Link> */}
         </div>
       </div>
     </header>
