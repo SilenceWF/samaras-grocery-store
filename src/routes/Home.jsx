@@ -2,15 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   appDownloadLinks,
+  awardsGallery,
   categories,
   getProductsByTab,
   googleBranchOverview,
   googleReviewHighlights,
   googleVisitingTips,
-  loyaltyHighlights,
   productTabs,
   promoCards,
-  recipes,
   storeGalleryPhotos,
   STORE_LOCATION,
   weeklyDeals,
@@ -30,7 +29,10 @@ export default function Home() {
   const [quickViewProduct, setQuickViewProduct] = useState(null)
   const [email, setEmail] = useState('')
   const [newsletterStatus, setNewsletterStatus] = useState('idle')
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null)
+  const [installHint, setInstallHint] = useState('')
   const tabSwitchTimeoutRef = useRef(null)
+  const installHintTimeoutRef = useRef(null)
 
   const tabProducts = useMemo(() => getProductsByTab(activeTab), [activeTab])
 
@@ -39,8 +41,37 @@ export default function Home() {
       if (tabSwitchTimeoutRef.current) {
         clearTimeout(tabSwitchTimeoutRef.current)
       }
+      if (installHintTimeoutRef.current) {
+        clearTimeout(installHintTimeoutRef.current)
+      }
     }
   }, [])
+
+  useEffect(() => {
+    const onBeforeInstallPrompt = (event) => {
+      event.preventDefault()
+      setDeferredInstallPrompt(event)
+    }
+
+    const onAppInstalled = () => {
+      setDeferredInstallPrompt(null)
+      setInstallHint(language === 'el' ? 'Το Samaras προστέθηκε στην αρχική οθόνη.' : 'Samaras has been added to your home screen.')
+      if (installHintTimeoutRef.current) {
+        clearTimeout(installHintTimeoutRef.current)
+      }
+      installHintTimeoutRef.current = setTimeout(() => {
+        setInstallHint('')
+      }, 6500)
+    }
+
+    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt)
+    window.addEventListener('appinstalled', onAppInstalled)
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt)
+      window.removeEventListener('appinstalled', onAppInstalled)
+    }
+  }, [language])
 
   const onNewsletterSubmit = (event) => {
     event.preventDefault()
@@ -70,8 +101,82 @@ export default function Home() {
     }, 250)
   }
 
+  const showInstallHint = (message) => {
+    setInstallHint(message)
+    if (installHintTimeoutRef.current) {
+      clearTimeout(installHintTimeoutRef.current)
+    }
+    installHintTimeoutRef.current = setTimeout(() => {
+      setInstallHint('')
+    }, 6500)
+  }
+
+  const onInstallShortcut = async () => {
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
+
+    if (isStandalone) {
+      showInstallHint(
+        language === 'el'
+          ? 'Το Samaras υπάρχει ήδη στην αρχική οθόνη.'
+          : 'Samaras is already available on your home screen.',
+      )
+      return
+    }
+
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt()
+      const choiceResult = await deferredInstallPrompt.userChoice
+      setDeferredInstallPrompt(null)
+
+      if (choiceResult.outcome === 'accepted') {
+        showInstallHint(
+          language === 'el'
+            ? 'Τέλειο! Το Samaras προστέθηκε στην αρχική οθόνη.'
+            : 'Done. Samaras has been added to your home screen.',
+        )
+      } else {
+        showInstallHint(
+          language === 'el'
+            ? 'Η εγκατάσταση ακυρώθηκε. Μπορείτε να δοκιμάσετε ξανά οποιαδήποτε στιγμή.'
+            : 'Install was dismissed. You can try again anytime.',
+        )
+      }
+      return
+    }
+
+    const userAgent = window.navigator.userAgent.toLowerCase()
+    const isIOS = /iphone|ipad|ipod/.test(userAgent)
+    const isAndroid = /android/.test(userAgent)
+
+    if (isIOS) {
+      showInstallHint(
+        language === 'el'
+          ? 'Πατήστε Share και μετά "Προσθήκη στην Αρχική Οθόνη".'
+          : 'Tap Share, then choose "Add to Home Screen".',
+      )
+      return
+    }
+
+    if (isAndroid) {
+      showInstallHint(
+        language === 'el'
+          ? 'Από το μενού του browser επιλέξτε "Προσθήκη στην αρχική οθόνη".'
+          : 'Open the browser menu and choose "Add to Home screen".',
+      )
+      return
+    }
+
+    showInstallHint(
+      language === 'el'
+        ? 'Χρησιμοποιήστε την επιλογή Install ή Add to Home Screen του browser.'
+        : 'Use your browser Install or Add to Home Screen option.',
+    )
+  }
+
   return (
     <div className="space-y-8 sm:space-y-10 lg:space-y-12">
+      {/* HEADER */}
       <section className="relative overflow-hidden rounded-[2rem] p-2">
         <div className="absolute inset-0">
           <div className="hero-gradient absolute inset-0" />
@@ -141,9 +246,34 @@ export default function Home() {
           </GlassPanel>
         </div>
       </section>
-
+      {/* PROMOS SECTION */}
       <section className="px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="scrollbar-thin -mx-1 flex snap-x gap-4 overflow-x-auto px-1 pb-2 md:hidden">
+          {promoCards.map((card) => (
+            <article
+              key={card.id}
+              className="group relative min-h-[230px] w-[86%] shrink-0 snap-center overflow-hidden rounded-[1.8rem] border border-white/10 bg-black/25"
+            >
+              <img
+                src={card.image}
+                alt={card.title[language]}
+                className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+              />
+              <div className={`absolute inset-0 bg-gradient-to-tr ${card.tone}`} />
+              <div className="absolute inset-0 bg-gradient-to-tr from-black/70 via-black/40 to-transparent" />
+              <div className="relative z-10 p-5">
+                <span className="glass-pill inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white">
+                  {card.label}
+                </span>
+                <h3 className="mt-4 max-w-[18ch] text-balance text-2xl font-extrabold leading-tight text-white sm:text-3xl">
+                  {card.title[language]}
+                </h3>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="hidden gap-4 md:grid md:grid-cols-2 xl:grid-cols-3">
           {promoCards.map((card) => (
             <article
               key={card.id}
@@ -168,7 +298,7 @@ export default function Home() {
           ))}
         </div>
       </section>
-
+      {/* STORE PHOTOS SECTION */}
       <section className="px-4 sm:px-6 lg:px-8">
         <SectionHeading
           title={language === 'el' ? 'Φωτογραφίες Καταστήματος' : 'Store Photos'}
@@ -178,7 +308,24 @@ export default function Home() {
               : 'A quick look inside Samaras and the day-to-day fresh stock.'
           }
         />
-        <div className="grid auto-rows-[230px] gap-3 md:grid-cols-4 md:auto-rows-[180px]">
+        <div className="scrollbar-thin -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2 md:hidden">
+          {storeGalleryPhotos.map((photo) => (
+            <article
+              key={photo.id}
+              className="group relative h-[230px] w-[88%] shrink-0 snap-center overflow-hidden rounded-[1.35rem] border border-white/10"
+            >
+              <img
+                src={photo.image}
+                alt={photo.alt[language]}
+                loading="lazy"
+                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+            </article>
+          ))}
+        </div>
+
+        <div className="hidden auto-rows-[230px] gap-3 md:grid md:grid-cols-4 md:auto-rows-[180px]">
           {storeGalleryPhotos.map((photo) => (
             <article
               key={photo.id}
@@ -195,7 +342,7 @@ export default function Home() {
           ))}
         </div>
       </section>
-
+      {/* CATEGORIES SECTION */}
       <section className="px-4 sm:px-6 lg:px-8">
         <SectionHeading
           title={copy.sectionCategories}
@@ -225,7 +372,7 @@ export default function Home() {
           ))}
         </div>
       </section>
-
+      {/* PRODUCTS SECTION */}
       <section className="px-4 sm:px-6 lg:px-8">
         <div className="glass-panel rounded-[1.7rem] p-4 sm:p-5">
           <div className="scrollbar-thin mb-5 flex items-center justify-start gap-2 overflow-x-auto p-4 sm:justify-center">
@@ -264,7 +411,7 @@ export default function Home() {
           )}
         </div>
       </section>
-
+      {/* WEEKLY SECTION */}
       <section id="weekly-deals" className="px-4 sm:px-6 lg:px-8">
         <GlassPanel className="overflow-hidden p-5 sm:p-7 border-none">
           <SectionHeading
@@ -287,7 +434,7 @@ export default function Home() {
           </div>
         </GlassPanel>
       </section>
-
+      {/* WHY CHOOSE SAMARAS SECTION */}
       <section className="px-4 sm:px-6 lg:px-8">
         <SectionHeading title={copy.sectionWhyChoose} />
         <div className="grid gap-3 md:grid-cols-3">
@@ -305,7 +452,7 @@ export default function Home() {
           ))}
         </div>
       </section>
-
+      {/* CUSTOMER REVIEWS SECTION */}
       <section className="px-4 sm:px-6 lg:px-8">
         <SectionHeading title={copy.sectionTestimonials} />
         <GlassPanel className="relative overflow-hidden p-5 sm:p-7 border-none">
@@ -352,6 +499,61 @@ export default function Home() {
                 <p className="mt-2 text-sm text-slate-200">{googleVisitingTips.quiet[language]}</p>
               </article>
             </div>
+          </div>
+        </GlassPanel>
+      </section>
+      {/* REWARDS SECTION */}
+      <section className="px-4 sm:px-6 lg:px-8">
+        <SectionHeading
+          title={language === 'el' ? 'Βραβεία' : 'Rewards'}
+          subtitle={
+            language === 'el'
+              ? 'Διακρίσεις και αναγνώριση που επιβεβαιώνουν την ποιότητα του Σαμαρά.'
+              : 'Recognition and awards that reflect Samaras quality and consistency.'
+          }
+        />
+
+        <GlassPanel className="overflow-hidden p-4 sm:p-6 border-none">
+          <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {awardsGallery.map((award) => (
+                <article
+                  key={award.id}
+                  className={`group relative overflow-hidden rounded-[1.35rem] border border-white/10 ${awardsGallery.length === 1 ? 'sm:col-span-2' : ''}`}
+                >
+                  <img
+                    src={award.image}
+                    alt={award.alt[language]}
+                    loading="lazy"
+                    className="h-full max-h-[360px] w-full object-cover transition duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-4">
+                    <p className="text-xs uppercase tracking-[0.15em] text-emerald-200">{award.title[language]}</p>
+                    <p className="mt-1 text-sm text-slate-100">{award.description[language]}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <article className="rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-5">
+              <p className="text-xs uppercase tracking-[0.15em] text-emerald-300">
+                {language === 'el' ? 'Αναγνώριση' : 'Recognition'}
+              </p>
+              <h3 className="mt-2 text-xl font-semibold text-white">{googleBranchOverview.awarded[language]}</h3>
+              <p className="mt-3 text-sm text-slate-200">
+                {language === 'el'
+                  ? 'Η εμπιστοσύνη της τοπικής κοινότητας μάς δίνει ώθηση να κρατάμε σταθερά υψηλή ποιότητα κάθε μέρα.'
+                  : 'Local community trust keeps us focused on high quality and consistency every single day.'}
+              </p>
+              <div className="mt-4 space-y-2 text-sm text-slate-200">
+                <p className="rounded-xl border border-white/12 bg-white/6 px-3 py-2">
+                  {'★★★★★'} {googleBranchOverview.rating} ({googleBranchOverview.reviewCount}{' '}
+                  {language === 'el' ? 'κριτικές' : 'reviews'})
+                </p>
+                <p className="rounded-xl border border-white/12 bg-white/6 px-3 py-2">{googleBranchOverview.address}</p>
+              </div>
+            </article>
           </div>
         </GlassPanel>
       </section>
@@ -406,14 +608,14 @@ export default function Home() {
           </div>
         </GlassPanel>
       </section> */}
-
+      {/* NEWSLETTER SECTION */}
       <section className="px-4 sm:px-6 lg:px-8">
         <SectionHeading title={copy.sectionNewsletter} />
         <GlassPanel className="p-5 sm:p-7 border-none">
           <h3 className="display-title text-3xl text-white">{copy.newsletterTitle}</h3>
           <p className="mt-2 max-w-xl text-sm text-slate-300">{copy.newsletterSubtitle}</p>
 
-          <form className="mt-5 flex gap-3 sm:flex-row" onSubmit={onNewsletterSubmit} noValidate>
+          <form className="mt-5 grid md:flex gap-3 sm:flex-row" onSubmit={onNewsletterSubmit} noValidate>
             <input
               type="email"
               value={email}
@@ -435,7 +637,7 @@ export default function Home() {
           ) : null}
         </GlassPanel>
       </section>
-
+      {/* STORE HOURS-MAP SECTION */}
       <section className="px-4 sm:px-6 lg:px-8">
         <SectionHeading title={copy.sectionHours} />
         <div className="grid gap-3 lg:grid-cols-[1fr_1.2fr]">
@@ -478,7 +680,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-
+      {/* FIND US ON MOBILE SECTION */}
       <section className="px-4 pb-10 sm:px-6 lg:px-8">
         <SectionHeading title={copy.sectionApp} />
         <GlassPanel className="grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-6 border-none">
@@ -488,12 +690,19 @@ export default function Home() {
 
           <div className="flex flex-wrap gap-2">
             {appDownloadLinks.map((link) => (
-              <button key={link.id} type="button" className="glass-button rounded-full px-4 py-2 text-sm font-semibold">
+              <button
+                key={link.id}
+                type="button"
+                onClick={onInstallShortcut}
+                className="glass-button rounded-full px-4 py-2 text-sm font-semibold"
+              >
                 <i className={`bx ${link.icon} mr-2 text-lg`} aria-hidden="true" />
                 {link.label}
               </button>
             ))}
           </div>
+
+          {installHint ? <p className="text-sm text-emerald-200 sm:col-span-2">{installHint}</p> : null}
         </GlassPanel>
       </section>
 

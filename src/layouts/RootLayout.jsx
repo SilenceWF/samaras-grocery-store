@@ -17,7 +17,7 @@ export default function RootLayout() {
       </div>
 
       <div className="relative z-10">
-        <main className="mx-auto w-full max-w-[1320px] px-3 pb-32 pt-3 sm:px-4 sm:pb-32 lg:px-7">
+        <main className="mx-auto w-full max-w-[1320px] px-3 pb-8 pt-3 sm:px-4 sm:pb-8 lg:px-7">
           <SiteHeader />
           <Outlet />
           <footer className="px-4 pb-32 pt-3 text-center text-sm text-emerald-100/50 font-semibold sm:px-6 sm:pb-28 lg:px-8">

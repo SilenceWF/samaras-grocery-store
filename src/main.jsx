@@ -12,6 +12,14 @@ import Cart from './routes/Cart'
 import Checkout from './routes/Checkout'
 import ComingSoon from './routes/ComingSoon'
 
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      // Keep the app functional even if service worker registration fails.
+    })
+  })
+}
+
 const router = createBrowserRouter([
   {
     element: <RootLayout />,

@@ -973,6 +973,25 @@ export const storeGalleryPhotos = [
   },
 ]
 
+export const awardsGallery = [
+  {
+    id: 'award_psaxno_2025',
+    image: '/images/awards/psaxno-2025.jpg',
+    alt: {
+      en: 'Samaras awarded at Psaxno Awards 2025',
+      el: 'Βράβευση Σαμαρά στα Psaxno Awards 2025',
+    },
+    title: {
+      en: 'Psaxno Awards 2025',
+      el: 'Psaxno Awards 2025',
+    },
+    description: {
+      en: 'Awarded among the most loved local grocery destinations in the area.',
+      el: 'Διάκριση ανάμεσα στα πιο αγαπημένα τοπικά παντοπωλεία της περιοχής.',
+    },
+  },
+]
+
 export const googleBranchOverview = {
   name: 'Οπωροπαντοπωλείο Σαμαράς',
   nameEn: 'Samaras Fruit & Grocery Market',
