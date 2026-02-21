@@ -33,7 +33,7 @@ export function AppStoreProvider({ children }) {
     if (storedLanguage === 'en' || storedLanguage === 'el') {
       return storedLanguage
     }
-    return 'en'
+    return 'el'
   })
 
   const [cart, setCart] = useState(() => readJSON(STORAGE_KEYS.cart, {}))
